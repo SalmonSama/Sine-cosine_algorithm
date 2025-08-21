@@ -67,29 +67,34 @@ def sca(objective_function, lb, ub, dim, num_agents, max_iter):
     return dest_pos, dest_fitness
 
 if __name__ == '__main__':
-    # MODIFIED: Changed the function to include the shift position
-    def shifted_sphere_function(x):
+    # MODIFIED: New objective function f1 (Shifted Sphere) based on Table A.1
+    def shifted_sphere_f1(x):
         """
-        Sphere function with a shifted minimum based on the provided image.
+        Sphere function f1 with a shifted minimum based on Table A.1.
         f(x) = sum((x_i - o_i)^2)
         """
-        # Create the shift vector o = [-30, -30, ..., -30]
+        # Create the shift vector o = [-30, -30, ..., -30] 
         shift_vector = np.full_like(x, -30.0)
         
         # Calculate the sum of squares for the shifted vector
         return np.sum(np.square(x - shift_vector))
 
-    # Parameters from the image and the original file
-    dim = 20
-    lb = [-100] * dim
-    ub = [100] * dim
+    # MODIFIED: Parameters updated according to Table A.1
+    dim = 20  # 
+    lb = [-100] * dim  # Range is [-100, 100] 
+    ub = [100] * dim   # Range is [-100, 100] 
     num_agents = 50
     max_iter = 1000
 
-    # MODIFIED: Changed the function call to use the new shifted function
-    best_solution, best_fitness = sca(shifted_sphere_function, lb, ub, dim, num_agents, max_iter)
+    # ADDED: Define the theoretical f_min for comparison.
+    THEORETICAL_F_MIN = 0 # 
 
-    print("\nBest solution found:")
-    print(best_solution)
-    print("\nBest fitness value:")
-    print(best_fitness)
+    # MODIFIED: Changed the function call to use the new f1 function
+    best_solution, best_fitness = sca(shifted_sphere_f1, lb, ub, dim, num_agents, max_iter)
+
+    print("\n------------------- RESULTS -------------------")
+    print(f"Best solution found:\n{best_solution}")
+    print(f"\nBest fitness value found: {best_fitness}")
+    print(f"Theoretical f_min:      {THEORETICAL_F_MIN}")
+    print(f"Difference (Error):       {abs(best_fitness - THEORETICAL_F_MIN)}")
+    print("---------------------------------------------")
