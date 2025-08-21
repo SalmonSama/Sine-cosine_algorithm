@@ -9,9 +9,9 @@ This repository provides a Python implementation of the Sine Cosine Algorithm (S
 
 The Sine Cosine Algorithm is a population-based optimization algorithm that utilizes sine and cosine functions to explore and exploit the search space. The algorithm creates a set of random initial solutions and then encourages them to move towards the best solution found so far. The position-updating equations are as follows:
 
-$ X_{i}^{t+1} = X_{i}^{t} + r_1 \times \sin(r_2) \times |r_3 P_{i}^{t} - X_{i}^{t}| $
+$$ X_{i}^{t+1} = X_{i}^{t} + r_1 \times \sin(r_2) \times |r_3 P_{i}^{t} - X_{i}^{t}| $$
 
-$ X_{i}^{t+1} = X_{i}^{t} + r_1 \times \cos(r_2) \times |r_3 P_{i}^{t} - X_{i}^{t}| $
+$$ X_{i}^{t+1} = X_{i}^{t} + r_1 \times \cos(r_2) \times |r_3 P_{i}^{t} - X_{i}^{t}| $$
 
 These two equations are combined as follows:
 
