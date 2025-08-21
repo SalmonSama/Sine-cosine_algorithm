@@ -67,19 +67,27 @@ def sca(objective_function, lb, ub, dim, num_agents, max_iter):
     return dest_pos, dest_fitness
 
 if __name__ == '__main__':
-    # Define a sample objective function (Sphere function)
-    def sphere_function(x):
-        return np.sum(np.square(x))
+    # MODIFIED: Changed the function to include the shift position
+    def shifted_sphere_function(x):
+        """
+        Sphere function with a shifted minimum based on the provided image.
+        f(x) = sum((x_i - o_i)^2)
+        """
+        # Create the shift vector o = [-30, -30, ..., -30]
+        shift_vector = np.full_like(x, -30.0)
+        
+        # Calculate the sum of squares for the shifted vector
+        return np.sum(np.square(x - shift_vector))
 
-    # Set the parameters for the SCA
+    # Parameters from the image and the original file
     dim = 20
     lb = [-100] * dim
     ub = [100] * dim
     num_agents = 50
     max_iter = 1000
 
-    # Run the SCA
-    best_solution, best_fitness = sca(sphere_function, lb, ub, dim, num_agents, max_iter)
+    # MODIFIED: Changed the function call to use the new shifted function
+    best_solution, best_fitness = sca(shifted_sphere_function, lb, ub, dim, num_agents, max_iter)
 
     print("\nBest solution found:")
     print(best_solution)
