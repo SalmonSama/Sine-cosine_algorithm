@@ -20,24 +20,26 @@ X_{i}^{t+1} = \begin{cases} X_{i}^{t} + r_1 \times \sin(r_2) \times |r_3 P_{i}^{
 $$
 
 Where:
-- $X_{i}^{t}$ is the position of the current solution in the i-th dimension at the t-th iteration.
-- $P_{i}^{t}$ is the position of the destination point in the i-th dimension.
-- $r_1, r_2, r_3, r_4$ are random numbers that guide the optimization process.
+-   $X_{i}^{t}$ is the position of the current solution in the i-th dimension at the t-th iteration.
+-   $P_{i}^{t}$ is the position of the destination point in the i-th dimension.
+-   $r_1, r_2, r_3, r_4$ are random numbers that guide the optimization process.
 
+---
 ## Benchmark Functions
 
 The SCA is tested on three different categories of benchmark functions to evaluate its performance in various optimization scenarios.
 
 ### 1. Unimodal Benchmark Functions
 
-Unimodal functions have a single global optimum, making them ideal for testing the exploitation capability of an algorithm.
+Unimodal functions have a single global optimum, making them ideal for testing the **exploitation** capability of an algorithm.
 
 #### Shifted Sphere Function (f1)
 
 The Sphere function is a simple, convex, and unimodal function. A shift is introduced to displace the minimum from the origin.
 
 **Formula:**
-$ f(x) = \sum_{i=1}^{D} (x_i - o_i)^2 $
+
+$$ f(x) = \sum_{i=1}^{D} (x_i - o_i)^2 $$
 
 Where 'o' is the shifted position.
 
@@ -57,14 +59,15 @@ def shifted_sphere_f1(x):
 
 ### 2\. Multimodal Benchmark Functions
 
-Multimodal functions have multiple local optima, which makes them suitable for testing an algorithm's ability to avoid getting trapped in a local minimum and to explore the search space effectively.
+Multimodal functions have multiple local optima, which makes them suitable for testing an algorithm's ability to avoid getting trapped in a local minimum and to **explore** the search space effectively.
 
 #### Shifted Schwefel Function (F8)
 
 The Schwefel function is a complex multimodal function with many local minima.
 
 **Formula:**
-$ f(x) = \\sum\_{i=1}^{D} -x\_i \\sin(\\sqrt{|x\_i|}) $
+
+$$ f(x) = \\sum\_{i=1}^{D} -x\_i \\sin(\\sqrt{|x\_i|}) $$
 
 **Implementation (`Multimodal_benchmark_functions.py`):**
 
@@ -87,29 +90,41 @@ def shifted_schwefel_f8(x):
 
 Composite functions are designed to be challenging by having a complex structure with multiple local optima.
 
-#### Shifted Rastrigin Function (F9)
+#### Shifted and Rotated Expanded Scaffer's Function (F14)
 
-The Rastrigin function is a classic example of a multimodal function with a regular distribution of local minima.
+This function is a complex composite function that is difficult to optimize due to its structure, which includes a narrow, curved valley.
 
 **Formula:**
-$ f(x) = \\sum\_{i=1}^{D} (x\_i^2 - 10 \\cos(2 \\pi x\_i) + 10) $
+
+$$ g(x, y) = 0.5 + \\frac{\\sin^2(\\sqrt{x^2+y^2}) - 0.5}{(1 + 0.001(x^2+y^2))^2} $$
+$$ f(x) = \\sum\_{i=1}^{D-1} g(x\_i, x\_{i+1}) + g(x\_D, x\_1) $$
 
 **Implementation (`Composite_benchmark_functions.py`):**
 
 ```python
-def shifted_rastrigin_f9(x):
+def expanded_scaffers_f14(x):
     """
-    Rastrigin function F9 with a shifted minimum.
-    f(x) = sum(x_i^2 - 10 * cos(2 * pi * x_i) + 10)
+    Shifted and Rotated Expanded Scaffer's F6 Function (F14).
     """
-    # Create the shift vector o = [-2, -2, ..., -2]
-    shift_vector = np.full_like(x, -2.0)
-
+    shift_vector = np.full_like(x, -50.0) # Example shift
     shifted_x = x - shift_vector
 
-    # Calculate the sum for the shifted vector based on the formula
-    return np.sum(np.square(shifted_x) - 10 * np.cos(2 * np.pi * shifted_x) + 10)
+    def g(x, y):
+        numerator = np.sin(np.sqrt(x**2 + y**2))**2 - 0.5
+        denominator = (1 + 0.001 * (x**2 + y**2))**2
+        return 0.5 + numerator / denominator
+
+    result = 0.0
+    for i in range(len(shifted_x) - 1):
+        result += g(shifted_x[i], shifted_x[i+1])
+    
+    # Add the last term connecting the last and first element
+    result += g(shifted_x[-1], shifted_x[0])
+    
+    return result
 ```
+
+-----
 
 ## How to Run
 
@@ -133,6 +148,8 @@ python Multimodal_benchmark_functions.py
 python Composite_benchmark_functions.py
 ```
 
+-----
+
 ## Results
 
 After running each script, the output will display the progress of the optimization process at every 100 iterations. The final results will show:
@@ -144,15 +161,16 @@ After running each script, the output will display the progress of the optimizat
 
 The goal is to minimize this error, indicating that the algorithm has successfully located the global optimum.
 
+-----
+
 ## Dependencies
 
   - **Python 3.x**
-  - **NumPy:** A fundamental package for scientific computing in Python.
-  - **math:** A standard Python library for mathematical functions.
+  - **NumPy**
+  - **math**
 
 You can install NumPy using pip:
 
 ```bash
 pip install numpy
 ```
-
