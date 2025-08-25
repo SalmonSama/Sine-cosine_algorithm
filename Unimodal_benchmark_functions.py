@@ -97,4 +97,4 @@ if __name__ == '__main__':
     print(f"\nBest fitness value found: {best_fitness}")
     print(f"Theoretical f_min:      {THEORETICAL_F_MIN}")
     print(f"Difference (Error):       {abs(best_fitness - THEORETICAL_F_MIN)}")
-    print("---------------------------------------------")
+    print("---------------------------------------------")  

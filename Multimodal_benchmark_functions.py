@@ -89,15 +89,10 @@ def plot_search_history(history_xy, lb, ub, contour_fn=None, optimum=None,
 
 # ---------- F8 Schwefel (shifted) ----------
 def shifted_schwefel_f8(x):
-    """
-    F8 Schwefel with shift o = [-300,...,-300]
-    f(x) = sum( - (x - o)_i * sin( sqrt(|(x - o)_i|) ) )
-    """
     shift_vector = np.full_like(x, -300.0)  # o
     shifted_x = x - shift_vector            # = x + 300
     return np.sum(-shifted_x * np.sin(np.sqrt(np.abs(shifted_x))))
 
-# Contour function for F8 in 2D (uses the same formula)
 def schwefel_contour_2d(X, Y, shift=(-300.0, -300.0)):
     sx = X - shift[0]
     sy = Y - shift[1]
@@ -112,8 +107,6 @@ if __name__ == '__main__':
     max_iter = 1000
 
     THEORETICAL_F_MIN = dim * -418.9829
-    # Optimum position of standard Schwefel is at ~420.9687 per dimension
-    # When shifted by o=-300, the new optimum x* is ≈ -300 + 420.9687 = 120.9687
     OPT_2D = (120.9687, 120.9687)
 
     best_solution, best_fitness, conv, avg_fit, traj_x1, hist_xy = sca(
@@ -157,3 +150,20 @@ if __name__ == '__main__':
         levels=25,
         sample_every=5
     )
+
+    # 5) 3D surface plot for F8
+    x = np.linspace(-500, -100, 220)
+    y = np.linspace(-500, -100, 220)
+    X, Y = np.meshgrid(x, y)
+    Xs, Ys = X + 300.0, Y + 300.0
+    Z = -(Xs * np.sin(np.sqrt(np.abs(Xs)))) - (Ys * np.sin(np.sqrt(np.abs(Ys))))
+
+    fig = plt.figure(figsize=(6.4, 4.6), dpi=120)
+    ax = fig.add_subplot(111, projection="3d")
+    ax.plot_surface(X, Y, Z, linewidth=0, antialiased=True)
+    zmin = float(Z.min())
+    ax.contour(X, Y, Z, zdir="z", offset=zmin, levels=25)
+    ax.set_xlabel("x values"); ax.set_ylabel("y values"); ax.set_zlabel("fitness value")
+    ax.set_title("Shifted Schwefel f8 (o=-300)")
+    ax.view_init(elev=35, azim=-60)
+    plt.show()
