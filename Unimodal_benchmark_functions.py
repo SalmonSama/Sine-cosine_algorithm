@@ -6,18 +6,6 @@ from mpl_toolkits.mplot3d import Axes3D
 def sca(objective_function, lb, ub, dim, num_agents, max_iter):
     """
     Sine Cosine Algorithm (SCA) for optimization.
-
-    Args:
-        objective_function (function): The objective function to be minimized.
-        lb (list or np.array): The lower bounds of the search space.
-        ub (list or np.array): The upper bounds of the search space.
-        dim (int): The dimension of the search space.
-        num_agents (int): The number of search agents (population size).
-        max_iter (int): The maximum number of iterations.
-
-    Returns:
-        tuple: A tuple containing the best solution found, its corresponding fitness value,
-               and the convergence curve.
     """
     # Initialize the positions of the search agents
     positions = np.zeros((num_agents, dim))
@@ -64,20 +52,14 @@ def sca(objective_function, lb, ub, dim, num_agents, max_iter):
                     positions[i, j] = positions[i, j] + (r1 * math.cos(r2) * abs(r3 * dest_pos[j] - positions[i, j]))
         
         convergence_curve[t] = dest_fitness
-        if (t % 100 == 0):
-            print(f"Iteration {t}: Best Fitness = {dest_fitness}")
 
     return dest_pos, dest_fitness, convergence_curve
 
 def shifted_sphere_f1(x):
     """
     Sphere function f1 with a shifted minimum based on Table A.1.
-    f(x) = sum((x_i - o_i)^2)
     """
-    # Create the shift vector o = [-30, -30, ..., -30] 
     shift_vector = np.full_like(x, -30.0)
-    
-    # Calculate the sum of squares for the shifted vector
     return np.sum(np.square(x - shift_vector))
 
 if __name__ == '__main__':
@@ -107,8 +89,7 @@ if __name__ == '__main__':
     plt.xlabel('Iteration')
     plt.ylabel('Best Fitness Value')
     plt.grid(True)
-    plt.savefig('convergence_curve.png')
-    print("Generated convergence_curve.png")
+    plt.show()
 
     # --- Plot 2: Histogram of Best Solution Parameters ---
     plt.figure(figsize=(10, 6))
@@ -117,8 +98,7 @@ if __name__ == '__main__':
     plt.xlabel('Parameter Value')
     plt.ylabel('Frequency')
     plt.grid(axis='y', alpha=0.75)
-    plt.savefig('solution_histogram.png')
-    print("Generated solution_histogram.png")
+    plt.show()
     
     # --- Prepare data for 2D/3D plots ---
     x_vals = np.linspace(best_solution[0] - 10, best_solution[0] + 10, 100)
@@ -141,8 +121,7 @@ if __name__ == '__main__':
     plt.ylabel('Dimension 2 Value')
     plt.plot(best_solution[0], best_solution[1], 'r*', markersize=15, label='Best Solution Found')
     plt.legend()
-    plt.savefig('fitness_contour.png')
-    print("Generated fitness_contour.png")
+    plt.show()
 
     # --- Plot 4: 3D Surface Plot ---
     fig = plt.figure(figsize=(12, 9))
@@ -154,5 +133,4 @@ if __name__ == '__main__':
     ax.set_ylabel('Dimension 2 Value')
     ax.set_zlabel('Fitness Value')
     ax.legend()
-    plt.savefig('fitness_surface_3d.png')
-    print("Generated fitness_surface_3d.png")
+    plt.show()
