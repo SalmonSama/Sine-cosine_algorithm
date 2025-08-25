@@ -14,9 +14,9 @@ def sca(objective_function, lb, ub, dim, num_agents, max_iter):
     # curves
     convergence_curve = np.zeros(max_iter)
     avg_fitness_curve = np.zeros(max_iter)
-    x1_agent1_traj   = np.zeros(max_iter)
+    x1_agent1_traj = np.zeros(max_iter)
 
-    # เก็บประวัติ (ฉาย 2D แรกสำหรับกราฟ Search history)
+    # Store history (first 2D projection for the Search history graph)
     search_history_xy = []
 
     for t in range(max_iter):
@@ -47,7 +47,7 @@ def sca(objective_function, lb, ub, dim, num_agents, max_iter):
 
         x1_agent1_traj[t] = positions[0, 0]
 
-        # เก็บประวัติ 2D แรก
+        # Store history of the first 2D dimensions
         if dim >= 2:
             search_history_xy.append(positions[:, :2].copy())
         else:
@@ -58,7 +58,7 @@ def sca(objective_function, lb, ub, dim, num_agents, max_iter):
 
     return dest_pos, dest_fitness, convergence_curve, avg_fitness_curve, x1_agent1_traj, np.array(search_history_xy)
 
-# ---------- ฟังก์ชันช่วยวาด Search history ----------
+# ---------- Helper function to plot Search history ----------
 def plot_search_history(history_xy, lb, ub, contour_fn=None, optimum=None,
                         title="Search history", levels=20, sample_every=5):
     x_min, x_max = lb[0], ub[0]
@@ -97,13 +97,13 @@ def shifted_schwefel_f8(x):
     shifted_x = x - shift_vector            # = x + 300
     return np.sum(-shifted_x * np.sin(np.sqrt(np.abs(shifted_x))))
 
-# contour สำหรับ F8 ใน 2D (ใช้สูตรเดียวกัน)
+# Contour function for F8 in 2D (uses the same formula)
 def schwefel_contour_2d(X, Y, shift=(-300.0, -300.0)):
     sx = X - shift[0]
     sy = Y - shift[1]
     return -(sx * np.sin(np.sqrt(np.abs(sx)))) - (sy * np.sin(np.sqrt(np.abs(sy))))
 
-# ------------------- รันและพล็อต -------------------
+# ------------------- Run and Plot -------------------
 if __name__ == '__main__':
     dim = 20
     lb = [-500] * dim
@@ -112,8 +112,8 @@ if __name__ == '__main__':
     max_iter = 1000
 
     THEORETICAL_F_MIN = dim * -418.9829
-    # ตำแหน่ง optimum ของ Schwefel มาตรฐานที่ ~420.9687 ต่อมิติ
-    # เมื่อ shift ด้วย o=-300 จะได้ x* ≈ -300 + 420.9687 = 120.9687
+    # Optimum position of standard Schwefel is at ~420.9687 per dimension
+    # When shifted by o=-300, the new optimum x* is ≈ -300 + 420.9687 = 120.9687
     OPT_2D = (120.9687, 120.9687)
 
     best_solution, best_fitness, conv, avg_fit, traj_x1, hist_xy = sca(
@@ -123,8 +123,8 @@ if __name__ == '__main__':
     print("\n------------------- RESULTS -------------------")
     print("Best solution found:\n", best_solution)
     print("\nBest fitness value found:", best_fitness)
-    print("Theoretical f_min:      ", THEORETICAL_F_MIN)
-    print("Difference (Error):       ", abs(best_fitness - THEORETICAL_F_MIN))
+    print("Theoretical f_min:       ", THEORETICAL_F_MIN)
+    print("Difference (Error):      ", abs(best_fitness - THEORETICAL_F_MIN))
     print("---------------------------------------------")
 
     # 1) Convergence
@@ -148,12 +148,12 @@ if __name__ == '__main__':
     plt.title("Average fitness during optimization (F8)")
     plt.grid(True); plt.legend(); plt.show()
 
-    # 4) Search history (ฉาย 2D แรก)
+    # 4) Search history (first 2D projection)
     plot_search_history(
         hist_xy, lb, ub,
         contour_fn=schwefel_contour_2d,
         optimum=OPT_2D,
-        title="F8  Search history",
+        title="F8 Search history",
         levels=25,
         sample_every=5
     )
