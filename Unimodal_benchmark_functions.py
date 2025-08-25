@@ -1,5 +1,7 @@
 import numpy as np
 import math
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 def sca(objective_function, lb, ub, dim, num_agents, max_iter):
     """
@@ -14,7 +16,8 @@ def sca(objective_function, lb, ub, dim, num_agents, max_iter):
         max_iter (int): The maximum number of iterations.
 
     Returns:
-        tuple: A tuple containing the best solution found and its corresponding fitness value.
+        tuple: A tuple containing the best solution found, its corresponding fitness value,
+               and the convergence curve.
     """
     # Initialize the positions of the search agents
     positions = np.zeros((num_agents, dim))
@@ -64,37 +67,92 @@ def sca(objective_function, lb, ub, dim, num_agents, max_iter):
         if (t % 100 == 0):
             print(f"Iteration {t}: Best Fitness = {dest_fitness}")
 
-    return dest_pos, dest_fitness
+    return dest_pos, dest_fitness, convergence_curve
+
+def shifted_sphere_f1(x):
+    """
+    Sphere function f1 with a shifted minimum based on Table A.1.
+    f(x) = sum((x_i - o_i)^2)
+    """
+    # Create the shift vector o = [-30, -30, ..., -30] 
+    shift_vector = np.full_like(x, -30.0)
+    
+    # Calculate the sum of squares for the shifted vector
+    return np.sum(np.square(x - shift_vector))
 
 if __name__ == '__main__':
-    # MODIFIED: New objective function f1 (Shifted Sphere) based on Table A.1
-    def shifted_sphere_f1(x):
-        """
-        Sphere function f1 with a shifted minimum based on Table A.1.
-        f(x) = sum((x_i - o_i)^2)
-        """
-        # Create the shift vector o = [-30, -30, ..., -30] 
-        shift_vector = np.full_like(x, -30.0)
-        
-        # Calculate the sum of squares for the shifted vector
-        return np.sum(np.square(x - shift_vector))
-
-    # MODIFIED: Parameters updated according to Table A.1
-    dim = 20  # 
-    lb = [-100] * dim  # Range is [-100, 100] 
-    ub = [100] * dim   # Range is [-100, 100] 
+    # --- Parameters ---
+    dim = 20
+    lb = [-100] * dim
+    ub = [100] * dim
     num_agents = 50
     max_iter = 1000
+    THEORETICAL_F_MIN = 0
 
-    # ADDED: Define the theoretical f_min for comparison.
-    THEORETICAL_F_MIN = 0 # 
+    # --- Run SCA ---
+    best_solution, best_fitness, convergence_curve = sca(shifted_sphere_f1, lb, ub, dim, num_agents, max_iter)
 
-    # MODIFIED: Changed the function call to use the new f1 function
-    best_solution, best_fitness = sca(shifted_sphere_f1, lb, ub, dim, num_agents, max_iter)
-
+    # --- Print Results ---
     print("\n------------------- RESULTS -------------------")
     print(f"Best solution found:\n{best_solution}")
     print(f"\nBest fitness value found: {best_fitness}")
     print(f"Theoretical f_min:      {THEORETICAL_F_MIN}")
     print(f"Difference (Error):       {abs(best_fitness - THEORETICAL_F_MIN)}")
-    print("---------------------------------------------")  
+    print("---------------------------------------------")
+
+    # --- Plot 1: Convergence Curve ---
+    plt.figure(figsize=(10, 6))
+    plt.plot(convergence_curve)
+    plt.title('Convergence Curve of SCA')
+    plt.xlabel('Iteration')
+    plt.ylabel('Best Fitness Value')
+    plt.grid(True)
+    plt.savefig('convergence_curve.png')
+    print("Generated convergence_curve.png")
+
+    # --- Plot 2: Histogram of Best Solution Parameters ---
+    plt.figure(figsize=(10, 6))
+    plt.hist(best_solution, bins=15, color='skyblue', edgecolor='black')
+    plt.title('Distribution of Parameters in the Best Solution')
+    plt.xlabel('Parameter Value')
+    plt.ylabel('Frequency')
+    plt.grid(axis='y', alpha=0.75)
+    plt.savefig('solution_histogram.png')
+    print("Generated solution_histogram.png")
+    
+    # --- Prepare data for 2D/3D plots ---
+    x_vals = np.linspace(best_solution[0] - 10, best_solution[0] + 10, 100)
+    y_vals = np.linspace(best_solution[1] - 10, best_solution[1] + 10, 100)
+    X, Y = np.meshgrid(x_vals, y_vals)
+    Z = np.zeros(X.shape)
+    fixed_params = best_solution[2:]
+    
+    for i in range(X.shape[0]):
+        for j in range(X.shape[1]):
+            current_vec = np.concatenate(([X[i, j], Y[i, j]], fixed_params))
+            Z[i, j] = shifted_sphere_f1(current_vec)
+            
+    # --- Plot 3: 2D Contour Plot ---
+    plt.figure(figsize=(10, 8))
+    cp = plt.contour(X, Y, Z, levels=20)
+    plt.colorbar(cp, label='Fitness Value')
+    plt.title('2D Fitness Landscape Contour (Slice)')
+    plt.xlabel('Dimension 1 Value')
+    plt.ylabel('Dimension 2 Value')
+    plt.plot(best_solution[0], best_solution[1], 'r*', markersize=15, label='Best Solution Found')
+    plt.legend()
+    plt.savefig('fitness_contour.png')
+    print("Generated fitness_contour.png")
+
+    # --- Plot 4: 3D Surface Plot ---
+    fig = plt.figure(figsize=(12, 9))
+    ax = fig.add_subplot(111, projection='3d')
+    ax.plot_surface(X, Y, Z, cmap='viridis', edgecolor='none', alpha=0.8)
+    ax.scatter(best_solution[0], best_solution[1], best_fitness, color='r', marker='*', s=200, label='Best Solution Found')
+    ax.set_title('3D Fitness Landscape Surface (Slice)')
+    ax.set_xlabel('Dimension 1 Value')
+    ax.set_ylabel('Dimension 2 Value')
+    ax.set_zlabel('Fitness Value')
+    ax.legend()
+    plt.savefig('fitness_surface_3d.png')
+    print("Generated fitness_surface_3d.png")
