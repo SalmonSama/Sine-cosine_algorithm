@@ -108,6 +108,9 @@ if __name__ == '__main__':
 
     THEORETICAL_F_MIN = dim * -418.9829
     OPT_2D = (120.9687, 120.9687)
+    # ADDED: Define the theoretical f_min for comparison.
+    # Note: The value "-418.9829 x 5" in the table seems to be a typo.
+    # The standard theoretical minimum for Schwefel is Dim * -418.9829.
 
     best_solution, best_fitness, conv, avg_fit, traj_x1, hist_xy = sca(
         shifted_schwefel_f8, lb, ub, dim, num_agents, max_iter
