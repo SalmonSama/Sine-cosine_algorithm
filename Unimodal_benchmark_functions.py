@@ -67,21 +67,21 @@ def sca(objective_function, lb, ub, dim, num_agents, max_iter):
 def shifted_sphere_f1(x):
     """
     Sphere function f1 with a shifted minimum based on Table A.1.
-    The theoretical minimum is at x = [-30, -30, ..., -30].
+    Theoretical minimum is at x = [-30, -30, ..., -30].
+    RMSE version to reduce scale of fitness values.
     """
     shift_vector = np.full_like(x, -30.0)
-    return np.sum(np.square(x - shift_vector))
+    return np.sqrt(np.mean(np.square(x - shift_vector)))
 
 if __name__ == '__main__':
     # --- Parameters ---
     dim = 20
     lb = [-100] * dim
     ub = [100] * dim
-    num_agents = 50
+    num_agents = 200
     max_iter = 1000
     THEORETICAL_F_MIN = 0
     THEORETICAL_OPTIMUM = np.full(dim, -30.0)
-
 
     # --- Run SCA ---
     best_solution, best_fitness, convergence, avg_fit, traj_x1, hist_xy = sca(
@@ -93,17 +93,16 @@ if __name__ == '__main__':
     print(f"Best solution found:\n{best_solution}")
     print(f"\nBest fitness value found: {best_fitness}")
     print(f"Theoretical f_min:      {THEORETICAL_F_MIN}")
-    print(f"Difference (Error):       {abs(best_fitness - THEORETICAL_F_MIN)}")
+    print(f"Difference (Error):     {abs(best_fitness - THEORETICAL_F_MIN)}")
     print("---------------------------------------------")
-
-    # --- Plotting Section (5 Plots) ---
-
+    
+    # --- Plotting Section (same as before) ---
     # Plot 1: Convergence Curve
     plt.figure(figsize=(10, 6))
     plt.plot(convergence, label="Best-so-far fitness")
     plt.xlabel("Iterations")
-    plt.ylabel("Fitness")
-    plt.title("SCA Convergence on Shifted Sphere (F1)")
+    plt.ylabel("Fitness (RMSE)")
+    plt.title("SCA Convergence on Shifted Sphere (F1, RMSE)")
     plt.grid(True)
     plt.legend()
     plt.show()
@@ -123,33 +122,29 @@ if __name__ == '__main__':
     plt.figure(figsize=(10, 6))
     plt.plot(avg_fit, color='green', label="Average fitness of agents")
     plt.xlabel("Iterations")
-    plt.ylabel("Average fitness")
-    plt.title("Average fitness during optimization on F1")
+    plt.ylabel("Average RMSE fitness")
+    plt.title("Average fitness during optimization on F1 (RMSE)")
     plt.grid(True)
     plt.legend()
     plt.show()
 
     # Plot 4: Search history (first 2D projection)
     plt.figure(figsize=(10, 8))
-    # -- Create background contour --
     x_range = np.linspace(lb[0], ub[0], 100)
     y_range = np.linspace(lb[1], ub[1], 100)
     X, Y = np.meshgrid(x_range, y_range)
     Z = np.zeros_like(X)
-    fixed_params = np.full(dim - 2, -30.0) # Assume other dimensions are at optimum for visualization
+    fixed_params = np.full(dim - 2, -30.0)
     for i in range(X.shape[0]):
         for j in range(X.shape[1]):
             Z[i, j] = shifted_sphere_f1(np.concatenate(([X[i, j], Y[i, j]], fixed_params)))
-            
     cp = plt.contour(X, Y, Z, levels=25)
-    plt.colorbar(cp, label='Fitness Value')
-    # -- Plot agent history --
+    plt.colorbar(cp, label='Fitness (RMSE)')
     sample_every = 5
     for i, positions in enumerate(hist_xy):
         if i % sample_every == 0:
-            alpha = (i / max_iter) * 0.7 + 0.1 # Fade in agents
+            alpha = (i / max_iter) * 0.7 + 0.1
             plt.scatter(positions[:, 0], positions[:, 1], color='blue', s=10, alpha=alpha)
-
     plt.plot(THEORETICAL_OPTIMUM[0], THEORETICAL_OPTIMUM[1], 'gP', markersize=15, label='Theoretical Optimum')
     plt.plot(best_solution[0], best_solution[1], 'r*', markersize=15, label='Best Solution Found')
     plt.title("Search History on F1 (2D Projection)")
@@ -158,33 +153,25 @@ if __name__ == '__main__':
     plt.legend()
     plt.show()
 
-    # Plot 5: 3D surface plot for F1 with Contour Projection
+    # Plot 5: 3D surface plot
     fig = plt.figure(figsize=(12, 9))
     ax = fig.add_subplot(111, projection='3d')
-    
-    # -- Create surface data --
     x_vals = np.linspace(best_solution[0] - 50, best_solution[0] + 50, 100)
     y_vals = np.linspace(best_solution[1] - 50, best_solution[1] + 50, 100)
     X_surf, Y_surf = np.meshgrid(x_vals, y_vals)
     Z_surf = np.zeros(X_surf.shape)
-    
     for i in range(X_surf.shape[0]):
         for j in range(X_surf.shape[1]):
             current_vec = np.concatenate(([X_surf[i, j], Y_surf[i, j]], best_solution[2:]))
             Z_surf[i, j] = shifted_sphere_f1(current_vec)
-    
-    # -- Plot the surface --
     ax.plot_surface(X_surf, Y_surf, Z_surf, cmap='viridis', edgecolor='none', alpha=0.8)
-    
-    # -- Add contour projection on the bottom plane --
     zmin = float(Z_surf.min())
     ax.contour(X_surf, Y_surf, Z_surf, zdir='z', offset=zmin, levels=25, cmap='viridis')
-    
     ax.scatter(best_solution[0], best_solution[1], best_fitness, color='r', marker='*', s=200, label='Best Solution Found')
-    ax.set_title("Shifted Sphere F1 (o=-30)")
+    ax.set_title("Shifted Sphere F1 (o=-30, RMSE)")
     ax.set_xlabel("x values")
     ax.set_ylabel("y values")
-    ax.set_zlabel("fitness value")
-    ax.view_init(elev=35, azim=-60) # Set viewing angle
+    ax.set_zlabel("Fitness (RMSE)")
+    ax.view_init(elev=35, azim=-60)
     ax.legend()
     plt.show()
