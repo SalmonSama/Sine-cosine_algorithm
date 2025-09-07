@@ -123,8 +123,10 @@ if __name__ == '__main__':
     dim = 20            # ตั้ง 2 จะสวยสุด; >2 จะฉาย 2 มิติแรก
     lb = [-100] * dim
     ub = [100] * dim
-    num_agents = 50
-    max_iter = 1000
+    
+    # ADJUSTED PARAMETERS TO MATCH THE PDF
+    num_agents = 30     # Changed from 50 to 30
+    max_iter = 500      # Changed from 1000 to 500
 
     best_solution, best_fitness, history_xy = sca(
         shifted_sphere_function, lb, ub, dim, num_agents, max_iter
@@ -137,9 +139,9 @@ if __name__ == '__main__':
     # ดาวแดงที่ optimum ของ shifted sphere คือ (-30, -30)
     plot_search_history(
         history_xy, lb, ub,
-        contour_fn=sphere_contour_2d,      # ไม่มี contour ก็ใส่ None ได้
+        contour_fn=sphere_contour_2d,
         optimum=(-30.0, -30.0),
-        title="F1  Search history",
+        title="F1 Search history (as per PDF)",
         levels=20,
-        sample_every=5                      # วาดทุก 5 iterations เพื่อลดจุดทับกัน
+        sample_every=5
     )
