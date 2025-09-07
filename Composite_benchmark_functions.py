@@ -1,40 +1,29 @@
 import numpy as np
 import math
-import matplotlib.pyplot as plt
 
-# ---------- SCA ----------
 def sca(objective_function, lb, ub, dim, num_agents, max_iter):
+    """
+    Sine Cosine Algorithm (SCA) for optimization.
+    """
     positions = np.zeros((num_agents, dim))
     for i in range(dim):
         positions[:, i] = np.random.uniform(lb[i], ub[i], num_agents)
 
     dest_pos = np.zeros(dim)
     dest_fitness = float("inf")
-
-    # curves to plot
-    convergence_curve = np.zeros(max_iter)   # best-so-far fitness
-    avg_fitness_curve = np.zeros(max_iter)   # average fitness of agents
-    x1_agent1_traj   = np.zeros(max_iter)    # trajectory of x1 (agent #1)
-
-    # เก็บประวัติ (ฉาย 2D แรกสำหรับ Search history)
-    search_history_xy = []
+    convergence_curve = np.zeros(max_iter)
 
     for t in range(max_iter):
-        # --- evaluate once per iteration
-        fitnesses = np.empty(num_agents)
         for i in range(num_agents):
             positions[i, :] = np.clip(positions[i, :], lb, ub)
-            fitnesses[i] = objective_function(positions[i, :])
-            if fitnesses[i] < dest_fitness:
-                dest_fitness = fitnesses[i]
+            fitness = objective_function(positions[i, :])
+            if fitness < dest_fitness:
+                dest_fitness = fitness
                 dest_pos = positions[i, :].copy()
 
-        convergence_curve[t] = dest_fitness
-        avg_fitness_curve[t] = np.mean(fitnesses)
-
-        # --- update positions (SCA move)
         a = 2
         r1 = a - t * (a / max_iter)
+
         for i in range(num_agents):
             for j in range(dim):
                 r2 = (2 * math.pi) * np.random.rand()
@@ -45,119 +34,50 @@ def sca(objective_function, lb, ub, dim, num_agents, max_iter):
                 else:
                     positions[i, j] = positions[i, j] + r1 * math.cos(r2) * abs(r3 * dest_pos[j] - positions[i, j])
 
-        x1_agent1_traj[t] = positions[0, 0]
-
-        # save 2D projection
-        if dim >= 2:
-            search_history_xy.append(positions[:, :2].copy())
-        else:
-            search_history_xy.append(np.c_[positions[:, 0], np.zeros(num_agents)])
-
-        if t % 100 == 0:
+        convergence_curve[t] = dest_fitness
+        if (t % 100 == 0):
             print(f"Iteration {t}: Best Fitness = {dest_fitness}")
 
-    return (dest_pos, dest_fitness,
-            convergence_curve, avg_fitness_curve, x1_agent1_traj,
-            np.array(search_history_xy))
+    return dest_pos, dest_fitness
 
-# ---------- ตัวช่วยวาด Search history ----------
-def plot_search_history(history_xy, lb, ub, contour_fn=None, optimum=None,
-                        title="Search history", levels=25, sample_every=5):
-    x_min, x_max = lb[0], ub[0]
-    y_min = lb[1] if len(lb) > 1 else lb[0]
-    y_max = ub[1] if len(ub) > 1 else ub[0]
 
-    plt.figure(figsize=(6,6))
-
-    # วาด contour ถ้ามี
-    if contour_fn is not None:
-        xs = np.linspace(x_min, x_max, 300)
-        ys = np.linspace(y_min, y_max, 300)
-        X, Y = np.meshgrid(xs, ys)
-        Z = contour_fn(X, Y)
-        plt.contour(X, Y, Z, levels=levels)
-
-    # วาดจุดของเอเจนต์ (sample เพื่อลดความหนาแน่น)
-    T = history_xy.shape[0]
-    for t in range(0, T, sample_every):
-        pts = history_xy[t]
-        plt.scatter(pts[:, 0], pts[:, 1], s=16, c='black')
-
-    # ดาวแดงที่ optimum
-    if optimum is not None:
-        plt.scatter([optimum[0]], [optimum[1]], s=120, c='red', marker='*')
-
-    plt.xlim([x_min, x_max]); plt.ylim([y_min, y_max])
-    plt.title(title); plt.xlabel("x₁"); plt.ylabel("x₂")
-    plt.grid(False)
-    plt.show()
-
-# ---------- F9: Rastrigin (shifted) ----------
-def shifted_rastrigin_f9(x):
-    """
-    f(x) = sum( (x - o)^2 - 10*cos(2*pi*(x - o)) + 10 ),  o = -2
-    """
-    shift_vector = np.full_like(x, -2.0)       # o
-    shifted_x = x - shift_vector               # = x + 2
-    return np.sum(shifted_x**2 - 10*np.cos(2*np.pi*shifted_x) + 10)
-
-# contour 2D สำหรับ Rastrigin (shifted)
-def rastrigin_contour_2d(X, Y, shift=(-2.0, -2.0)):
-    SX = X - shift[0]
-    SY = Y - shift[1]
-    return (SX**2 - 10*np.cos(2*np.pi*SX) + 10) + \
-           (SY**2 - 10*np.cos(2*np.pi*SY) + 10)
-
-# -------------------- รันและพล็อต --------------------
 if __name__ == '__main__':
-    dim = 20             # ตั้ง 2 เพื่อให้ Search history สวยที่สุด
-    lb  = [-5.12] * dim
-    ub  = [ 5.12] * dim
+    # ---------- Objective function: f1 (Shifted Sphere) ----------
+    def shifted_sphere_f1(x):
+        shift_vector = np.full_like(x, -30.0)  # o = [-30,...]
+        return np.sum(np.square(x - shift_vector))
+
+    dim = 20
+    lb = [-100] * dim
+    ub = [100] * dim
     num_agents = 50
-    max_iter   = 1000
+    max_iter = 1000
+    THEORETICAL_F_MIN = 0
 
-    THEORETICAL_F_MIN = 0.0      # Rastrigin ต่ำสุดที่ 0
-    OPT_2D = (-2.0, -2.0)        # หลัง shift optimum อยู่ที่ (-2, -2)
-
-    (best_solution, best_fitness,
-     conv, avg_fit, traj_x1, hist_xy) = sca(
-        shifted_rastrigin_f9, lb, ub, dim, num_agents, max_iter
-    )
+    best_solution, best_fitness = sca(shifted_sphere_f1, lb, ub, dim, num_agents, max_iter)
 
     print("\n------------------- RESULTS -------------------")
-    print("Best solution found:\n", best_solution)
-    print("\nBest fitness value found:", best_fitness)
-    print("Theoretical f_min:      ", THEORETICAL_F_MIN)
-    print("Difference (Error):       ", abs(best_fitness - THEORETICAL_F_MIN))
+    print(f"Best solution found:\n{best_solution}")
+    print(f"\nBest fitness value found: {best_fitness}")
+    print(f"Theoretical f_min:      {THEORETICAL_F_MIN}")
+    print(f"Difference (Error):       {abs(best_fitness - THEORETICAL_F_MIN)}")
     print("---------------------------------------------")
 
-    # 1) Convergence
-    plt.figure(figsize=(8,5))
-    plt.plot(conv, label="Best-so-far fitness")
-    plt.xlabel("Iterations"); plt.ylabel("Fitness")
-    plt.title("SCA Convergence on F9 (shifted Rastrigin)")
-    plt.grid(True); plt.legend(); plt.show()
+    # ---------- 3D Surface Plot ----------
+    import matplotlib.pyplot as plt
+    from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 
-    # 2) Trajectory ของ x1 (agent #1)
-    plt.figure(figsize=(6,5))
-    plt.plot(traj_x1, color='red', label="x₁ of agent #1")
-    plt.xlabel("Iterations"); plt.ylabel("x₁ value")
-    plt.title("Trajectory of the first variable (agent #1)")
-    plt.grid(True); plt.legend(); plt.show()
+    x = np.linspace(-60, 0, 200)
+    y = np.linspace(-60, 0, 200)
+    X, Y = np.meshgrid(x, y)
+    Z = (X + 30.0)**2 + (Y + 30.0)**2
 
-    # 3) Average fitness ของทุกเอเจนต์
-    plt.figure(figsize=(6,5))
-    plt.plot(avg_fit, color='green', label="Average fitness of agents")
-    plt.xlabel("Iterations"); plt.ylabel("Average fitness")
-    plt.title("Average fitness during optimization (F9)")
-    plt.grid(True); plt.legend(); plt.show()
-
-    # 4) Search history (ฉาย 2D แรก)
-    plot_search_history(
-        hist_xy, lb, ub,
-        contour_fn=rastrigin_contour_2d,
-        optimum=OPT_2D,
-        title="F9  Search history",
-        levels=30,
-        sample_every=5
-    )
+    fig = plt.figure(figsize=(6.4, 4.6), dpi=120)
+    ax = fig.add_subplot(111, projection="3d")
+    ax.plot_surface(X, Y, Z, linewidth=0, antialiased=True)
+    zmin = float(Z.min())
+    ax.contour(X, Y, Z, zdir="z", offset=zmin, levels=20)
+    ax.set_xlabel("x values"); ax.set_ylabel("y values"); ax.set_zlabel("fitness value")
+    ax.set_title("Shifted Sphere f1 (o=-30)")
+    ax.view_init(elev=35, azim=-60)
+    plt.show()
