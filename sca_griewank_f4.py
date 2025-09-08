@@ -104,6 +104,7 @@ def save_agent_slides_on_contour(pop_history_2d, xmin=-600, xmax=600, ymin=-600,
         plt.xlabel("x1"); plt.ylabel("x2"); plt.legend()
         plt.tight_layout()
         fname = os.path.join(outdir, f"f4_agents_iter_{it:02d}.png")
+        plt.show();
         plt.savefig(fname, dpi=200); plt.close()
 
 
@@ -117,6 +118,7 @@ def plot_convergence(curve, start_iter=5, end_iter=100, fname="f4_convergence.pn
     plt.xlabel("Iteration"); plt.ylabel("Best objective value")
     plt.title("Convergence (best-so-far)")
     plt.grid(True); plt.tight_layout()
+    plt.show();
     plt.savefig(fname, dpi=200); plt.close()
 
 
@@ -131,6 +133,7 @@ def plot_mean_std(mean_curve, std_curve, title="Average Minimum Value with Std",
                      label="±1 std. deviation")
     plt.xlabel("Iterations"); plt.ylabel("Objective value")
     plt.title(title); plt.legend(); plt.grid(True)
+    plt.show();
     plt.tight_layout(); plt.savefig(fname, dpi=200); plt.close()
 
 
