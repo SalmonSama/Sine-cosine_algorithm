@@ -94,9 +94,10 @@ def sca(objective_function, lb, ub, dim, num_agents, max_iter, seed=None):
 
 
 # =======================================
-# New Plotting Functions (Iterations limited)
+# Plotting Functions (With Recommended Ranges)
 # =======================================
 
+# --- UNCHANGED: This function correctly shows the full history (0-100) ---
 def plot_search_history(history, x_range=(-2, 2), y_range=(-2, 2), out="search_history.png"):
     """ 1. Plots the trajectory of all search agents on the contour plot (first 100 iters). """
     xs = np.linspace(x_range[0], x_range[1], 400)
@@ -122,38 +123,33 @@ def plot_search_history(history, x_range=(-2, 2), y_range=(-2, 2), out="search_h
     ax.set_xlabel("x1"); ax.set_ylabel("x2"); ax.legend()
     plt.tight_layout(); plt.savefig(out, dpi=200); plt.close()
 
+# --- MODIFIED SECTION: Changed to plot iterations 5-100 ---
 def plot_first_agent_trajectory(trajectory, out="first_agent_trajectory.png"):
     """ 2. Plots the trajectory of x1 for the first agent (iters 5-100). """
     plt.figure(figsize=(8, 5))
     
-    # --- MODIFICATION START ---
     start_iter = 5
     end_iter = 100
     
-    # Create an array for the x-axis representing actual iterations
     iterations = np.arange(start_iter, end_iter + 1)
-    
-    # Slice data: Iteration `i` is at index `i-1`. So for 5-100, we need indices 4 to 99.
     trajectory_sliced = trajectory[start_iter - 1 : end_iter]
 
     plt.plot(iterations, trajectory_sliced)
     
     plt.xlabel("Iteration")
     plt.ylabel("Value of x1 for the first agent")
-    # Update title
     plt.title(f"Trajectory of the First Variable (x1) of the First Agent (Iterations {start_iter}-{end_iter})")
-    # --- MODIFICATION END ---
     
     plt.grid(True)
     plt.tight_layout()
     plt.savefig(out, dpi=200)
     plt.close()
 
+# --- MODIFIED SECTION: Changed to plot iterations 5-100 ---
 def plot_average_fitness(avg_fitness, out="average_fitness.png"):
     """ 3. Plots the average fitness of all search agents (iters 5-100). """
     plt.figure(figsize=(8, 5))
-    
-    # --- MODIFICATION START ---
+
     start_iter = 5
     end_iter = 100
     
@@ -165,18 +161,17 @@ def plot_average_fitness(avg_fitness, out="average_fitness.png"):
     plt.xlabel("Iteration")
     plt.ylabel("Average Fitness")
     plt.title(f"Average Fitness of Search Agents (Iterations {start_iter}-{end_iter})")
-    # --- MODIFICATION END ---
     
     plt.grid(True)
     plt.tight_layout()
     plt.savefig(out, dpi=200)
     plt.close()
 
+# --- MODIFIED SECTION: Changed to plot iterations 5-100 ---
 def plot_full_convergence_curve(curve, out="convergence_curve.png"):
     """ 4. Plots the convergence curve (iters 5-100). """
     plt.figure(figsize=(8, 5))
-    
-    # --- MODIFICATION START ---
+
     start_iter = 5
     end_iter = 100
     
@@ -188,7 +183,6 @@ def plot_full_convergence_curve(curve, out="convergence_curve.png"):
     plt.xlabel("Iteration")
     plt.ylabel("Best Objective Value (Fitness)")
     plt.title(f"Convergence Curve (Iterations {start_iter}-{end_iter})")
-    # --- MODIFICATION END ---
     
     plt.grid(True)
     plt.tight_layout()
@@ -231,31 +225,6 @@ def save_agent_slides(pop_history_2d, x_range=(-2, 2), y_range=(-2, 2), outdir="
         fname = os.path.join(outdir, f"iter_{it:02d}.png")
         plt.savefig(fname, dpi=200); plt.close()
 
-# These functions are no longer called in the main block but are kept for reference
-def plot_convergence(curve, start_iter=5, end_iter=100, out="rosenbrock_convergence.png"):
-    n = len(curve)
-    s = max(0, min(start_iter - 1, n - 1))
-    e = max(1, min(end_iter, n))
-    xs = np.arange(s + 1, e + 1)
-    plt.figure(figsize=(7, 5))
-    plt.plot(xs, curve[s:e])
-    plt.xlabel("Iteration")
-    plt.ylabel("Best objective value")
-    plt.title("Rosenbrock: Convergence (best-so-far from iter 5-100)")
-    plt.grid(True)
-    plt.tight_layout()
-    plt.savefig(out, dpi=200)
-    plt.close()
-
-def build_gif_from_png(folder="rosenbrock_agents", out_gif="rosenbrock_agents_slideshow.gif", duration=250):
-    frames = []
-    for i in range(1, 21):
-        fname = os.path.join(folder, f"iter_{i:02d}.png")
-        if os.path.exists(fname):
-            frames.append(Image.open(fname))
-    if frames:
-        frames[0].save(out_gif, save_all=True, append_images=frames[1:], duration=duration, loop=0)
-
 # =========================
 # Main Execution (Revised)
 # =========================
@@ -264,7 +233,7 @@ if __name__ == "__main__":
     D = 2
     lb, ub = -2.0, 2.0
     num_agents = 20
-    max_iter = 120 # Still run 120 iterations to get complete data
+    max_iter = 120 # Still run 120 iterations to get complete data for slicing
     seed = 2025
 
     # --- Create output directories ---
@@ -276,20 +245,19 @@ if __name__ == "__main__":
     print(f"[Rosenbrock D=2] Final best fitness = {best_fitness:.6e}")
 
     # --- Generate agent slide images ---
-    # These are PNGs showing agent positions for the first 20 iterations
     save_agent_slides(logs["pop_history_2d"], x_range=(lb, ub), y_range=(lb, ub), outdir="rosenbrock_agents")
     print("\nSuccessfully generated agent slides in 'rosenbrock_agents/' directory.")
     
     # --- Generate all analysis plots in the 'rosenbrock_analysis_plots' directory ---
     
-    # 1. Contour plot (Moved to analysis folder)
+    # 1. Contour plot
     plot_rosenbrock_contour(
         x_range=(lb, ub), 
         y_range=(lb, ub),
         out=os.path.join(output_dir, "contour_f2_rosenbrock.png")
     )
     
-    # 2. Search history
+    # 2. Search history (uses 0-100)
     plot_search_history(
         logs["full_pop_history"],
         x_range=(lb, ub),
@@ -297,19 +265,19 @@ if __name__ == "__main__":
         out=os.path.join(output_dir, "1_search_history.png")
     )
     
-    # 3. Trajectory of the first agent's first variable
+    # 3. Trajectory of the first agent's first variable (uses 5-100)
     plot_first_agent_trajectory(
         logs["first_agent_traj_x1"],
         out=os.path.join(output_dir, "2_first_agent_trajectory.png")
     )
     
-    # 4. Average fitness
+    # 4. Average fitness (uses 5-100)
     plot_average_fitness(
         logs["avg_fitness"],
         out=os.path.join(output_dir, "3_average_fitness.png")
     )
     
-    # 5. Full convergence curve
+    # 5. Full convergence curve (uses 5-100)
     plot_full_convergence_curve(
         logs["convergence"],
         out=os.path.join(output_dir, "4_convergence_curve.png")
