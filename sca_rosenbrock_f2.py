@@ -1,18 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-SCA on Rosenbrock (f2) — D=2 visuals & Enhanced Analysis
----------------------------------------------------------
+SCA on Rosenbrock (f2) — D=2 visuals & Enhanced Analysis (Revised)
+-------------------------------------------------------------------
 Generates:
-ORIGINAL:
-1) Contour plot (D=2) -> contour_f2_rosenbrock.png
-2) Agent slideshow (first 20 iterations, 20 agents) -> rosenbrock_agents/iter_XX.png + GIF
-3) Convergence plot (iteration 5..100) -> rosenbrock_convergence.png
-
-ADDED FROM graph.txt (MODIFIED TO SHOW 100 ITERATIONS):
-4) Search history of all agents (first 100 iters) -> rosenbrock_analysis_plots/1_search_history.png
-5) Trajectory of the first variable of the first agent (first 100 iters) -> rosenbrock_analysis_plots/2_first_agent_trajectory.png
-6) Average fitness of the population (first 100 iters) -> rosenbrock_analysis_plots/3_average_fitness.png
-7) Full Convergence curve (first 100 iters) -> rosenbrock_analysis_plots/4_convergence_curve.png
+1) Agent slideshow (first 20 iterations, 20 agents) -> rosenbrock_agents/iter_XX.png
+2) A directory 'rosenbrock_analysis_plots' containing:
+   - Contour plot (D=2) -> contour_f2_rosenbrock.png
+   - Search history of all agents (first 100 iters) -> 1_search_history.png
+   - Trajectory of the first variable of the first agent (first 100 iters) -> 2_first_agent_trajectory.png
+   - Average fitness of the population (first 100 iters) -> 3_average_fitness.png
+   - Full Convergence curve (first 100 iters) -> 4_convergence_curve.png
 """
 
 import os
@@ -200,6 +197,7 @@ def save_agent_slides(pop_history_2d, x_range=(-2, 2), y_range=(-2, 2), outdir="
         fname = os.path.join(outdir, f"iter_{it:02d}.png")
         plt.savefig(fname, dpi=200); plt.close()
 
+# These functions are no longer called in the main block but are kept for reference
 def plot_convergence(curve, start_iter=5, end_iter=100, out="rosenbrock_convergence.png"):
     n = len(curve)
     s = max(0, min(start_iter - 1, n - 1))
@@ -225,40 +223,39 @@ def build_gif_from_png(folder="rosenbrock_agents", out_gif="rosenbrock_agents_sl
         frames[0].save(out_gif, save_all=True, append_images=frames[1:], duration=duration, loop=0)
 
 # =========================
-# Main Execution
+# Main Execution (Revised)
 # =========================
 if __name__ == "__main__":
     # Settings
     D = 2
     lb, ub = -2.0, 2.0
     num_agents = 20
-    max_iter = 120 # ยังคงรัน 120 iterations เพื่อให้ได้ข้อมูลที่ครบถ้วน
+    max_iter = 120 # Still run 120 iterations to get complete data
     seed = 2025
 
+    # --- Create output directories ---
+    output_dir = "rosenbrock_analysis_plots"
+    os.makedirs(output_dir, exist_ok=True)
+    
     # --- Run SCA once and collect all logs ---
     _, best_fitness, logs = sca(rosenbrock_f2, lb, ub, D, num_agents, max_iter, seed=seed)
     print(f"[Rosenbrock D=2] Final best fitness = {best_fitness:.6e}")
 
-    # --- Generate ORIGINAL plots ---
-    # 1) Contour
-    plot_rosenbrock_contour(x_range=(lb, ub), y_range=(lb, ub))
-    
-    # 2) Slides for first 20 iterations
+    # --- Generate agent slide images ---
+    # These are PNGs showing agent positions for the first 20 iterations
     save_agent_slides(logs["pop_history_2d"], x_range=(lb, ub), y_range=(lb, ub), outdir="rosenbrock_agents")
-    try:
-        build_gif_from_png(folder="rosenbrock_agents", out_gif="rosenbrock_agents_slideshow.gif", duration=250)
-    except Exception as e:
-        print(f"Could not build GIF: {e}")
-
-    # 3) Sliced Convergence k=5..100 (This plot already meets the requirement)
-    plot_convergence(logs["convergence"], start_iter=5, end_iter=100, out="rosenbrock_convergence.png")
-    print("\nSuccessfully generated original plots (contour, slides, sliced convergence).")
-
-    # --- Generate the 4 NEW analysis plots (now limited to 100 iterations) ---
-    output_dir = "rosenbrock_analysis_plots"
-    os.makedirs(output_dir, exist_ok=True)
+    print("\nSuccessfully generated agent slides in 'rosenbrock_agents/' directory.")
     
-    # 1. Search history
+    # --- Generate all analysis plots in the 'rosenbrock_analysis_plots' directory ---
+    
+    # 1. Contour plot (Moved to analysis folder)
+    plot_rosenbrock_contour(
+        x_range=(lb, ub), 
+        y_range=(lb, ub),
+        out=os.path.join(output_dir, "contour_f2_rosenbrock.png")
+    )
+    
+    # 2. Search history
     plot_search_history(
         logs["full_pop_history"],
         x_range=(lb, ub),
@@ -266,22 +263,22 @@ if __name__ == "__main__":
         out=os.path.join(output_dir, "1_search_history.png")
     )
     
-    # 2. Trajectory of the first agent's first variable
+    # 3. Trajectory of the first agent's first variable
     plot_first_agent_trajectory(
         logs["first_agent_traj_x1"],
         out=os.path.join(output_dir, "2_first_agent_trajectory.png")
     )
     
-    # 3. Average fitness
+    # 4. Average fitness
     plot_average_fitness(
         logs["avg_fitness"],
         out=os.path.join(output_dir, "3_average_fitness.png")
     )
     
-    # 4. Full convergence curve
+    # 5. Full convergence curve
     plot_full_convergence_curve(
         logs["convergence"],
         out=os.path.join(output_dir, "4_convergence_curve.png")
     )
 
-    print(f"\nSuccessfully generated 4 new analysis plots (up to 100 iterations) in the '{output_dir}' directory.")
+    print(f"\nSuccessfully generated analysis plots in the '{output_dir}' directory.")
