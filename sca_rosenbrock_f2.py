@@ -5,11 +5,11 @@ SCA on Rosenbrock (f2) — D=2 visuals & Enhanced Analysis (Revised)
 Generates:
 1) Agent slideshow (first 20 iterations, 20 agents) -> rosenbrock_agents/iter_XX.png
 2) A directory 'rosenbrock_analysis_plots' containing:
-   - Contour plot (D=2) -> contour_f2_rosenbrock.png
-   - Search history of all agents (first 100 iters) -> 1_search_history.png
-   - Trajectory of the first variable of the first agent (first 100 iters) -> 2_first_agent_trajectory.png
-   - Average fitness of the population (first 100 iters) -> 3_average_fitness.png
-   - Full Convergence curve (first 100 iters) -> 4_convergence_curve.png
+    - Contour plot (D=2) -> contour_f2_rosenbrock.png
+    - Search history of all agents (first 100 iters) -> 1_search_history.png
+    - Trajectory of the first variable of the first agent (iters 5-100) -> 2_first_agent_trajectory.png
+    - Average fitness of the population (iters 5-100) -> 3_average_fitness.png
+    - Full Convergence curve (iters 5-100) -> 4_convergence_curve.png
 """
 
 import os
@@ -94,7 +94,7 @@ def sca(objective_function, lb, ub, dim, num_agents, max_iter, seed=None):
 
 
 # =======================================
-# New Plotting Functions (Iterations limited to 100)
+# New Plotting Functions (Iterations limited)
 # =======================================
 
 def plot_search_history(history, x_range=(-2, 2), y_range=(-2, 2), out="search_history.png"):
@@ -123,39 +123,73 @@ def plot_search_history(history, x_range=(-2, 2), y_range=(-2, 2), out="search_h
     plt.tight_layout(); plt.savefig(out, dpi=200); plt.close()
 
 def plot_first_agent_trajectory(trajectory, out="first_agent_trajectory.png"):
-    """ 2. Plots the trajectory of x1 for the first agent (first 100 iters). """
+    """ 2. Plots the trajectory of x1 for the first agent (iters 5-100). """
     plt.figure(figsize=(8, 5))
-    # Slice trajectory to the first 100 iterations
-    plt.plot(trajectory[:100])
+    
+    # --- MODIFICATION START ---
+    start_iter = 5
+    end_iter = 100
+    
+    # Create an array for the x-axis representing actual iterations
+    iterations = np.arange(start_iter, end_iter + 1)
+    
+    # Slice data: Iteration `i` is at index `i-1`. So for 5-100, we need indices 4 to 99.
+    trajectory_sliced = trajectory[start_iter - 1 : end_iter]
+
+    plt.plot(iterations, trajectory_sliced)
+    
     plt.xlabel("Iteration")
     plt.ylabel("Value of x1 for the first agent")
-    plt.title("Trajectory of the First Variable (x1) of the First Agent (First 100 Iterations)")
+    # Update title
+    plt.title(f"Trajectory of the First Variable (x1) of the First Agent (Iterations {start_iter}-{end_iter})")
+    # --- MODIFICATION END ---
+    
     plt.grid(True)
     plt.tight_layout()
     plt.savefig(out, dpi=200)
     plt.close()
 
 def plot_average_fitness(avg_fitness, out="average_fitness.png"):
-    """ 3. Plots the average fitness of all search agents (first 100 iters). """
+    """ 3. Plots the average fitness of all search agents (iters 5-100). """
     plt.figure(figsize=(8, 5))
-    # Slice fitness data to the first 100 iterations
-    plt.plot(avg_fitness[:100])
+    
+    # --- MODIFICATION START ---
+    start_iter = 5
+    end_iter = 100
+    
+    iterations = np.arange(start_iter, end_iter + 1)
+    avg_fitness_sliced = avg_fitness[start_iter - 1 : end_iter]
+    
+    plt.plot(iterations, avg_fitness_sliced)
+    
     plt.xlabel("Iteration")
     plt.ylabel("Average Fitness")
-    plt.title("Average Fitness of Search Agents (First 100 Iterations)")
+    plt.title(f"Average Fitness of Search Agents (Iterations {start_iter}-{end_iter})")
+    # --- MODIFICATION END ---
+    
     plt.grid(True)
     plt.tight_layout()
     plt.savefig(out, dpi=200)
     plt.close()
 
 def plot_full_convergence_curve(curve, out="convergence_curve.png"):
-    """ 4. Plots the convergence curve (first 100 iters). """
+    """ 4. Plots the convergence curve (iters 5-100). """
     plt.figure(figsize=(8, 5))
-    # Slice convergence data to the first 100 iterations
-    plt.plot(curve[:100])
+    
+    # --- MODIFICATION START ---
+    start_iter = 5
+    end_iter = 100
+    
+    iterations = np.arange(start_iter, end_iter + 1)
+    curve_sliced = curve[start_iter - 1 : end_iter]
+    
+    plt.plot(iterations, curve_sliced)
+
     plt.xlabel("Iteration")
     plt.ylabel("Best Objective Value (Fitness)")
-    plt.title("Convergence Curve (First 100 Iterations)")
+    plt.title(f"Convergence Curve (Iterations {start_iter}-{end_iter})")
+    # --- MODIFICATION END ---
+    
     plt.grid(True)
     plt.tight_layout()
     plt.savefig(out, dpi=200)
