@@ -1,17 +1,25 @@
 # -*- coding: utf-8 -*-
 """
-SCA on Rosenbrock (f2) — D=2 visuals
-------------------------------------
+SCA on Rosenbrock (f2) — D=2 visuals & Enhanced Analysis
+---------------------------------------------------------
 Generates:
-1) Contour plot (D=2)  -> contour_f2_rosenbrock.png
+ORIGINAL:
+1) Contour plot (D=2) -> contour_f2_rosenbrock.png
 2) Agent slideshow (first 20 iterations, 20 agents) -> rosenbrock_agents/iter_XX.png + GIF
 3) Convergence plot (iteration 5..100) -> rosenbrock_convergence.png
+
+ADDED FROM graph.txt (MODIFIED TO SHOW 100 ITERATIONS):
+4) Search history of all agents (first 100 iters) -> rosenbrock_analysis_plots/1_search_history.png
+5) Trajectory of the first variable of the first agent (first 100 iters) -> rosenbrock_analysis_plots/2_first_agent_trajectory.png
+6) Average fitness of the population (first 100 iters) -> rosenbrock_analysis_plots/3_average_fitness.png
+7) Full Convergence curve (first 100 iters) -> rosenbrock_analysis_plots/4_convergence_curve.png
 """
 
 import os
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
+from matplotlib.collections import LineCollection
 
 # =========================
 # Benchmark: Rosenbrock f2
@@ -28,7 +36,7 @@ def rosenbrock_f2(x: np.ndarray) -> float:
 
 
 # =========================
-# Sine Cosine Algorithm
+# Sine Cosine Algorithm (Modified to log more data)
 # =========================
 def sca(objective_function, lb, ub, dim, num_agents, max_iter, seed=None):
     rng = np.random.default_rng(seed)
@@ -36,14 +44,23 @@ def sca(objective_function, lb, ub, dim, num_agents, max_iter, seed=None):
     dest_pos = np.zeros(dim)
     dest_fitness = float("inf")
 
+    # --- Logging variables ---
     convergence = np.zeros(max_iter)
     pop_history_2d = []
+    avg_fitness_history = np.zeros(max_iter)
+    first_agent_traj_x1 = np.zeros(max_iter)
+    full_pop_history = []
 
     a = 2.0
     for t in range(max_iter):
         # Evaluate
         positions = np.clip(positions, lb, ub)
         fitnesses = np.apply_along_axis(objective_function, 1, positions)
+
+        # --- Log data for this iteration ---
+        avg_fitness_history[t] = np.mean(fitnesses)
+        first_agent_traj_x1[t] = positions[0, 0]
+        full_pop_history.append(positions.copy())
 
         # Update best
         idx = np.argmin(fitnesses)
@@ -61,105 +78,210 @@ def sca(objective_function, lb, ub, dim, num_agents, max_iter, seed=None):
         r1 = a - t * (a / max_iter)
         for i in range(num_agents):
             for j in range(dim):
-                r2 = rng.uniform(0, 2*np.pi)
+                r2 = rng.uniform(0, 2 * np.pi)
                 r3 = rng.uniform(0, 2)
                 r4 = rng.uniform(0, 1)
                 if r4 < 0.5:
-                    positions[i, j] = positions[i, j] + r1*np.sin(r2)*abs(r3*dest_pos[j] - positions[i, j])
+                    positions[i, j] = positions[i, j] + r1 * np.sin(r2) * abs(r3 * dest_pos[j] - positions[i, j])
                 else:
-                    positions[i, j] = positions[i, j] + r1*np.cos(r2)*abs(r3*dest_pos[j] - positions[i, j])
+                    positions[i, j] = positions[i, j] + r1 * np.cos(r2) * abs(r3 * dest_pos[j] - positions[i, j])
 
-    logs = {"convergence": convergence, "pop_history_2d": pop_history_2d}
+    logs = {
+        "convergence": convergence,
+        "pop_history_2d": pop_history_2d,
+        "avg_fitness": avg_fitness_history,
+        "first_agent_traj_x1": first_agent_traj_x1,
+        "full_pop_history": full_pop_history
+    }
     return dest_pos, dest_fitness, logs
 
 
+# =======================================
+# New Plotting Functions (Iterations limited to 100)
+# =======================================
+
+def plot_search_history(history, x_range=(-2, 2), y_range=(-2, 2), out="search_history.png"):
+    """ 1. Plots the trajectory of all search agents on the contour plot (first 100 iters). """
+    xs = np.linspace(x_range[0], x_range[1], 400)
+    ys = np.linspace(y_range[0], y_range[1], 400)
+    XX, YY = np.meshgrid(xs, ys)
+    Z = 100.0 * (YY - XX**2)**2 + (1.0 - XX)**2
+
+    fig, ax = plt.subplots(figsize=(8, 7))
+    ax.contour(XX, YY, Z, levels=50, cmap='viridis', alpha=0.7)
+    
+    # Slice history to the first 100 iterations
+    history_sliced = history[:100]
+    agent_trajectories = np.array(history_sliced).transpose(1, 0, 2)
+    
+    for agent_path in agent_trajectories:
+        points = agent_path.reshape(-1, 1, 2)
+        segments = np.concatenate([points[:-1], points[1:]], axis=1)
+        lc = LineCollection(segments, color='red', alpha=0.3, linewidth=1)
+        ax.add_collection(lc)
+
+    ax.scatter([1], [1], marker="*", s=150, c='gold', edgecolors='black', zorder=5, label="Global Min (1,1)")
+    ax.set_title("Search History of All Agents (First 100 Iterations)")
+    ax.set_xlabel("x1"); ax.set_ylabel("x2"); ax.legend()
+    plt.tight_layout(); plt.savefig(out, dpi=200); plt.close()
+
+def plot_first_agent_trajectory(trajectory, out="first_agent_trajectory.png"):
+    """ 2. Plots the trajectory of x1 for the first agent (first 100 iters). """
+    plt.figure(figsize=(8, 5))
+    # Slice trajectory to the first 100 iterations
+    plt.plot(trajectory[:100])
+    plt.xlabel("Iteration")
+    plt.ylabel("Value of x1 for the first agent")
+    plt.title("Trajectory of the First Variable (x1) of the First Agent (First 100 Iterations)")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(out, dpi=200)
+    plt.close()
+
+def plot_average_fitness(avg_fitness, out="average_fitness.png"):
+    """ 3. Plots the average fitness of all search agents (first 100 iters). """
+    plt.figure(figsize=(8, 5))
+    # Slice fitness data to the first 100 iterations
+    plt.plot(avg_fitness[:100])
+    plt.xlabel("Iteration")
+    plt.ylabel("Average Fitness")
+    plt.title("Average Fitness of Search Agents (First 100 Iterations)")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(out, dpi=200)
+    plt.close()
+
+def plot_full_convergence_curve(curve, out="convergence_curve.png"):
+    """ 4. Plots the convergence curve (first 100 iters). """
+    plt.figure(figsize=(8, 5))
+    # Slice convergence data to the first 100 iterations
+    plt.plot(curve[:100])
+    plt.xlabel("Iteration")
+    plt.ylabel("Best Objective Value (Fitness)")
+    plt.title("Convergence Curve (First 100 Iterations)")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(out, dpi=200)
+    plt.close()
+
 # =========================
-# Plot helpers
+# Original Plot helpers
 # =========================
 def plot_rosenbrock_contour(x_range=(-2, 2), y_range=(-2, 2), levels=50, out="contour_f2_rosenbrock.png"):
     xs = np.linspace(x_range[0], x_range[1], 400)
     ys = np.linspace(y_range[0], y_range[1], 400)
     XX, YY = np.meshgrid(xs, ys)
-    Z = 100.0*(YY - XX**2)**2 + (1.0 - XX)**2
+    Z = 100.0 * (YY - XX**2)**2 + (1.0 - XX)**2
 
     plt.figure(figsize=(7, 6))
     cs = plt.contour(XX, YY, Z, levels=levels)
     plt.clabel(cs, inline=True, fontsize=8)
-    plt.scatter([1],[1], marker="*", s=120, label="global min (1,1)")
+    plt.scatter([1], [1], marker="*", s=120, label="global min (1,1)")
     plt.title("Rosenbrock f2 (D=2) Contour")
     plt.xlabel("x1"); plt.ylabel("x2"); plt.legend()
     plt.tight_layout(); plt.savefig(out, dpi=200); plt.close()
-
 
 def save_agent_slides(pop_history_2d, x_range=(-2, 2), y_range=(-2, 2), outdir="rosenbrock_agents"):
     os.makedirs(outdir, exist_ok=True)
     xs = np.linspace(x_range[0], x_range[1], 400)
     ys = np.linspace(y_range[0], y_range[1], 400)
     XX, YY = np.meshgrid(xs, ys)
-    Z = 100.0*(YY - XX**2)**2 + (1.0 - XX)**2
+    Z = 100.0 * (YY - XX**2)**2 + (1.0 - XX)**2
 
     for it, pop in enumerate(pop_history_2d, start=1):
         plt.figure(figsize=(7, 6))
         cs = plt.contour(XX, YY, Z, levels=50)
         plt.clabel(cs, inline=True, fontsize=8)
-        plt.scatter(pop[:, 0], pop[:, 1], s=25)  # default color
-        plt.scatter([1],[1], marker="*", s=120, label="global min (1,1)")
+        plt.scatter(pop[:, 0], pop[:, 1], s=25)
+        plt.scatter([1], [1], marker="*", s=120, label="global min (1,1)")
         plt.title(f"Rosenbrock agents at iteration {it}")
         plt.xlabel("x1"); plt.ylabel("x2"); plt.legend()
         plt.tight_layout()
         fname = os.path.join(outdir, f"iter_{it:02d}.png")
         plt.savefig(fname, dpi=200); plt.close()
 
-
 def plot_convergence(curve, start_iter=5, end_iter=100, out="rosenbrock_convergence.png"):
     n = len(curve)
-    s = max(0, min(start_iter-1, n-1))
+    s = max(0, min(start_iter - 1, n - 1))
     e = max(1, min(end_iter, n))
-    xs = np.arange(s+1, e+1)
+    xs = np.arange(s + 1, e + 1)
     plt.figure(figsize=(7, 5))
     plt.plot(xs, curve[s:e])
     plt.xlabel("Iteration")
     plt.ylabel("Best objective value")
-    plt.title("Rosenbrock: Convergence (best-so-far)")
+    plt.title("Rosenbrock: Convergence (best-so-far from iter 5-100)")
     plt.grid(True)
     plt.tight_layout()
     plt.savefig(out, dpi=200)
     plt.close()
 
-
 def build_gif_from_png(folder="rosenbrock_agents", out_gif="rosenbrock_agents_slideshow.gif", duration=250):
     frames = []
-    for i in range(1, 21):  # 20 frames
+    for i in range(1, 21):
         fname = os.path.join(folder, f"iter_{i:02d}.png")
-        frames.append(Image.open(fname))
-    frames[0].save(out_gif, save_all=True, append_images=frames[1:], duration=duration, loop=0)
-
+        if os.path.exists(fname):
+            frames.append(Image.open(fname))
+    if frames:
+        frames[0].save(out_gif, save_all=True, append_images=frames[1:], duration=duration, loop=0)
 
 # =========================
-# Main
+# Main Execution
 # =========================
 if __name__ == "__main__":
-    # Settings for Rosenbrock visuals
+    # Settings
     D = 2
     lb, ub = -2.0, 2.0
     num_agents = 20
-    max_iter = 120  # ensure >= 100 for convergence slice
+    max_iter = 120 # ยังคงรัน 120 iterations เพื่อให้ได้ข้อมูลที่ครบถ้วน
     seed = 2025
 
+    # --- Run SCA once and collect all logs ---
+    _, best_fitness, logs = sca(rosenbrock_f2, lb, ub, D, num_agents, max_iter, seed=seed)
+    print(f"[Rosenbrock D=2] Final best fitness = {best_fitness:.6e}")
+
+    # --- Generate ORIGINAL plots ---
     # 1) Contour
     plot_rosenbrock_contour(x_range=(lb, ub), y_range=(lb, ub))
-
-    # 2) Run SCA and collect history
-    _, best, logs = sca(rosenbrock_f2, lb, ub, D, num_agents, max_iter, seed=seed)
-    print(f"[Rosenbrock D=2] best min = {best:.6e}")
-
-    # 3) Slides for first 20 iterations
+    
+    # 2) Slides for first 20 iterations
     save_agent_slides(logs["pop_history_2d"], x_range=(lb, ub), y_range=(lb, ub), outdir="rosenbrock_agents")
     try:
         build_gif_from_png(folder="rosenbrock_agents", out_gif="rosenbrock_agents_slideshow.gif", duration=250)
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"Could not build GIF: {e}")
 
-    # 4) Convergence k=5..100
+    # 3) Sliced Convergence k=5..100 (This plot already meets the requirement)
     plot_convergence(logs["convergence"], start_iter=5, end_iter=100, out="rosenbrock_convergence.png")
-    print("Done.")
+    print("\nSuccessfully generated original plots (contour, slides, sliced convergence).")
+
+    # --- Generate the 4 NEW analysis plots (now limited to 100 iterations) ---
+    output_dir = "rosenbrock_analysis_plots"
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # 1. Search history
+    plot_search_history(
+        logs["full_pop_history"],
+        x_range=(lb, ub),
+        y_range=(lb, ub),
+        out=os.path.join(output_dir, "1_search_history.png")
+    )
+    
+    # 2. Trajectory of the first agent's first variable
+    plot_first_agent_trajectory(
+        logs["first_agent_traj_x1"],
+        out=os.path.join(output_dir, "2_first_agent_trajectory.png")
+    )
+    
+    # 3. Average fitness
+    plot_average_fitness(
+        logs["avg_fitness"],
+        out=os.path.join(output_dir, "3_average_fitness.png")
+    )
+    
+    # 4. Full convergence curve
+    plot_full_convergence_curve(
+        logs["convergence"],
+        out=os.path.join(output_dir, "4_convergence_curve.png")
+    )
+
+    print(f"\nSuccessfully generated 4 new analysis plots (up to 100 iterations) in the '{output_dir}' directory.")
